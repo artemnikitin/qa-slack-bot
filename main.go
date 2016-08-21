@@ -18,9 +18,11 @@ var (
 	slackUser   = flag.String("user", "", "User name for Slack")
 	debug       = flag.Bool("debug", false, "Enable debug mode")
 
-	keywords             = []string{"ваканси", "работа", "позици", "тестировщик", "автоматизатор", "должность", "требования"}
-	URLKeywords          = []string{"hh.ru", "job", "linkedin", "position", "vacancy", "work", "career"}
+	textKeywords         = []string{"ваканси", "работа", "позици", "тестировщик", "автоматизатор", "должность", "требования"}
+	linkKeywords         = []string{"hh.ru", "job", "linkedin", "position", "vacancy", "work", "career"}
 	fromID, toID, userID string
+	rtm                  *slack.RTM
+	api                  *slack.Client
 )
 
 const regex = "(http|https)://([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:/~+#-]*[\\w@?^=%&/~+#-])?"
@@ -28,7 +30,7 @@ const regex = "(http|https)://([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:/~+#-]
 func main() {
 	flag.Parse()
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
-	log.SetPrefix("slack-bot:")
+
 	if *token == "" || *fromChannel == "" || *toChannel == "" || *slackUser == "" {
 		fmt.Println("Specify correct flags")
 		flag.PrintDefaults()
@@ -40,7 +42,7 @@ func main() {
 		log.Fatal("Can't compile regexp:", err)
 	}
 
-	api := slack.New(*token)
+	api = slack.New(*token)
 	api.SetDebug(*debug)
 
 	users, err := api.GetUsers()
@@ -70,7 +72,7 @@ func main() {
 		}
 	}
 
-	rtm := api.NewRTM()
+	rtm = api.NewRTM()
 	go rtm.ManageConnection()
 
 	for {
@@ -79,22 +81,7 @@ func main() {
 			fmt.Println("Event Received")
 			switch ev := msg.Data.(type) {
 			case *slack.MessageEvent:
-				if ev.Channel == fromID {
-					text := ev.Text
-					if ev.SubMessage != nil {
-						text = ev.SubMessage.Text
-					}
-					if isJobPosting(text, r) {
-						text = strings.Replace(text, "<", "", -1)
-						text = strings.Replace(text, ">", "", -1)
-						rtm.SendMessage(rtm.NewOutgoingMessage(text, toID))
-					}
-				}
-				if ev.Channel == toID {
-					if ev.User != userID {
-						api.DeleteMessage(toID, ev.Timestamp)
-					}
-				}
+				processMessage(ev, r)
 
 			case *slack.RTMError:
 				fmt.Printf("Error: %s\n", ev.Error())
@@ -110,9 +97,28 @@ func main() {
 
 }
 
+func processMessage(ev *slack.MessageEvent, r *regexp.Regexp) {
+	if ev.Channel == fromID {
+		text := ev.Text
+		if ev.SubMessage != nil {
+			text = ev.SubMessage.Text
+		}
+		if isJobPosting(text, r) {
+			text = strings.Replace(text, "<", "", -1)
+			text = strings.Replace(text, ">", "", -1)
+			rtm.SendMessage(rtm.NewOutgoingMessage(text, toID))
+		}
+	}
+	if ev.Channel == toID {
+		if ev.User != userID {
+			api.DeleteMessage(toID, ev.Timestamp)
+		}
+	}
+}
+
 func isJobPosting(text string, r *regexp.Regexp) bool {
 	text = strings.ToLower(text)
-	return r.MatchString(text) && (containsKeyword(text, keywords) || containsKeyword(text, URLKeywords))
+	return r.MatchString(text) && (containsKeyword(text, textKeywords) || containsKeyword(text, linkKeywords))
 }
 
 func containsKeyword(text string, list []string) bool {

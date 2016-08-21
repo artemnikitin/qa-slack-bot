@@ -39,7 +39,7 @@ func TestContainsKeyword(t *testing.T) {
 	}
 
 	for _, v := range cases {
-		result := containsKeyword(v.in, URLKeywords)
+		result := containsKeyword(v.in, linkKeywords)
 		if result != v.res {
 			t.Errorf("For string: %s, actual result: %v, expected: %v", v.in, result, v.res)
 		}
