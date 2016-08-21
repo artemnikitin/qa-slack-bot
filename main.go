@@ -81,7 +81,8 @@ func main() {
 			fmt.Println("Event Received")
 			switch ev := msg.Data.(type) {
 			case *slack.MessageEvent:
-				processMessage(ev, r)
+				processMessageIfNeeded(ev, r)
+				deleteMessageIfNeeded(ev)
 
 			case *slack.RTMError:
 				fmt.Printf("Error: %s\n", ev.Error())
@@ -97,7 +98,7 @@ func main() {
 
 }
 
-func processMessage(ev *slack.MessageEvent, r *regexp.Regexp) {
+func processMessageIfNeeded(ev *slack.MessageEvent, r *regexp.Regexp) {
 	if ev.Channel == fromID {
 		text := ev.Text
 		if ev.SubMessage != nil && len(ev.Attachments) == 0 {
@@ -109,6 +110,9 @@ func processMessage(ev *slack.MessageEvent, r *regexp.Regexp) {
 			rtm.SendMessage(rtm.NewOutgoingMessage(text, toID))
 		}
 	}
+}
+
+func deleteMessageIfNeeded(ev *slack.MessageEvent) {
 	if ev.Channel == toID {
 		if ev.User != userID {
 			api.DeleteMessage(toID, ev.Timestamp)
