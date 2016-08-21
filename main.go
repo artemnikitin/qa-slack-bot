@@ -100,7 +100,7 @@ func main() {
 func processMessage(ev *slack.MessageEvent, r *regexp.Regexp) {
 	if ev.Channel == fromID {
 		text := ev.Text
-		if ev.SubMessage != nil {
+		if ev.SubMessage != nil && len(ev.Attachments) == 0 {
 			text = ev.SubMessage.Text
 		}
 		if isJobPosting(text, r) {
