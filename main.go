@@ -122,7 +122,8 @@ func deleteMessageIfNeeded(ev *slack.MessageEvent) {
 
 func isJobPosting(text string, r *regexp.Regexp) bool {
 	text = strings.ToLower(text)
-	return r.MatchString(text) && (containsKeyword(text, textKeywords) || containsKeyword(text, linkKeywords))
+	withKeyword := containsKeyword(text, textKeywords) || containsKeyword(text, linkKeywords)
+	return r.MatchString(text) && withKeyword && isNotSlackURL(text)
 }
 
 func containsKeyword(text string, list []string) bool {
@@ -134,4 +135,8 @@ func containsKeyword(text string, list []string) bool {
 		}
 	}
 	return result
+}
+
+func isNotSlackURL(text string) bool {
+	return !strings.Contains(text, ".slack.com")
 }
