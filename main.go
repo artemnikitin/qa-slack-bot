@@ -39,7 +39,7 @@ func main() {
 
 	r, err := regexp.Compile(regex)
 	if err != nil {
-		log.Fatal("Can't compile regexp:", err)
+		log.Fatal("Can't compile regexp: ", err)
 	}
 
 	api = slack.New(*token)
@@ -100,8 +100,11 @@ func main() {
 
 func processMessageIfNeeded(ev *slack.MessageEvent, r *regexp.Regexp) {
 	if ev.Channel == fromID {
+		if ev.SubType == "message_changed" && len(ev.SubMessage.Attachments) > 0 {
+			return
+		}
 		text := ev.Text
-		if ev.SubMessage != nil && len(ev.Attachments) == 0 {
+		if ev.SubMessage != nil && ev.SubMessage.Text != "" {
 			text = ev.SubMessage.Text
 		}
 		if isJobPosting(text, r) {
