@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/nlopes/slack"
@@ -176,7 +177,7 @@ func TestAlreadyPostedMessageShouldntBePostedTwice(t *testing.T) {
 
 	err = client.RepostMessage(ev, r)
 	if err == nil {
-		t.Error("Should return an error on attempt to repost already reposted message")
+		t.Error(err.Error())
 	}
 }
 
@@ -211,12 +212,13 @@ func TestNewMessageShouldBeReposted(t *testing.T) {
 
 	err = client.RepostMessage(ev, r)
 	if err != nil {
-		t.Error("Should return ok for repost of a new message")
+		t.Error(err.Error())
 	}
 
 }
 
 func randomString(n int) string {
+	rand.Seed(time.Now().UnixNano())
 	b := make([]rune, n)
 	for i := range b {
 		b[i] = letters[rand.Intn(len(letters))]
