@@ -100,18 +100,6 @@ func main() {
 	flag.Parse()
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 
-	/**debug = true
-	*token = "xoxb-70959650517-a1ZNrKZeEwJum1PMQu0zlsdP"
-	*fromChannel = "jobs"
-	*toChannel = "vacancies"
-	*slackUser = "recruiters"*/
-
-	/**debug = true
-	*token = "xoxp-2693983659-5089661906-67807438769-3e87bc69f7"
-	*fromChannel = "jobs"
-	*toChannel = "vacancies"
-	*slackUser = "artemnikitin"*/
-
 	if *token == "" || *fromChannel == "" || *toChannel == "" || *slackUser == "" {
 		fmt.Println("Specify correct flags")
 		flag.PrintDefaults()
