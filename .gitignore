@@ -26,5 +26,5 @@ _testmain.go
 .idea/
 *.db
 
-cover.out
-coverage.html
+*.out
+*.html

@@ -23,6 +23,7 @@ var (
 	textKeywords         = []string{"ваканси", "работа", "позици", "тестировщик", "автоматизатор", "должность", "требования"}
 	linkKeywords         = []string{"hh.ru", "job", "linkedin", "position", "vacancy", "work", "career"}
 	fromID, toID, userID string
+	userMap              map[string]string
 )
 
 const (
@@ -77,6 +78,9 @@ func (c *SlackClient) RepostMessage(ev *slack.MessageEvent, r *regexp.Regexp) er
 	}
 	text = strings.Replace(text, "<", "", -1)
 	text = strings.Replace(text, ">", "", -1)
+	if strings.Contains(text, "@U") {
+		text = replaceIDWithNickname(text)
+	}
 	if alreadyPosted(text, c.Storage) {
 		return errors.New(ALREADY_POSTED)
 	}
@@ -99,6 +103,8 @@ func (c *SlackClient) DeleteMessage(ev *slack.MessageEvent) error {
 func main() {
 	flag.Parse()
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
+
+	userMap = make(map[string]string)
 
 	if *token == "" || *fromChannel == "" || *toChannel == "" || *slackUser == "" {
 		fmt.Println("Specify correct flags")
@@ -183,15 +189,36 @@ func isNotSlackURL(text string) bool {
 	return !strings.Contains(text, ".slack.com")
 }
 
+func replaceIDWithNickname(text string) string {
+	if len(text) <= 10 {
+		return text
+	}
+	count := strings.Count(text, "@U")
+	place := 0
+	start := 0
+	for i := 0; i < count; i++ {
+		if len(text[place:])-start >= 10 {
+			start := strings.Index(text, "@U")
+			place += start + 1
+			id := text[start+1 : start+10]
+			nickname, ok := userMap[id]
+			if ok {
+				text = strings.Replace(text, id, nickname, -1)
+			}
+		}
+	}
+	return text
+}
+
 func getSlackUserID(api *slack.Client) {
 	users, err := api.GetUsers()
 	if err != nil {
 		log.Fatal("Can't get list of users:", err)
 	}
 	for _, user := range users {
+		userMap[user.ID] = user.Name
 		if user.Name == *slackUser {
 			userID = user.ID
-			break
 		}
 	}
 }

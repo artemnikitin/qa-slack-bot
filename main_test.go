@@ -85,6 +85,38 @@ func TestIsJobPosting(t *testing.T) {
 	}
 }
 
+func TestReplaceID(t *testing.T) {
+	userMap = make(map[string]string)
+	userMap["U22KZA25S"] = "vasya"
+	userMap["U11KZA007"] = "aid"
+
+	cases := []struct {
+		in  string
+		out string
+	}{
+		{"", ""},
+		{"@U22KZA25S test", "@vasya test"},
+		{"@UQ1 test", "@UQ1 test"},
+		{"@UQ1001200 test", "@UQ1001200 test"},
+		{"test @U22KZA25S", "test @vasya"},
+		{"test @U22KZA25S test", "test @vasya test"},
+		{"@U22KZA25S test @U11KZA007", "@vasya test @aid"},
+		{"@U22KZA25S @U11KZA007", "@vasya @aid"},
+		{"@U22KZA25S@U11KZA007", "@vasya@aid"},
+		{"test @U22KZA25S test @U11KZA007", "test @vasya test @aid"},
+		{"test @U22KZA25S test @U11KZA007 test", "test @vasya test @aid test"},
+		{"@U22KZA25S test @U11KZA007 test", "@vasya test @aid test"},
+		{"@U22KZA25S test @U22KZA001", "@vasya test @U22KZA001"},
+	}
+
+	for _, v := range cases {
+		result := replaceIDWithNickname(v.in)
+		if result != v.out {
+			t.Errorf("For string: %s, actual result: %v, expected: %v", v.in, result, v.out)
+		}
+	}
+}
+
 func TestSlackClientRepost(t *testing.T) {
 	cases := []struct {
 		msg       *slack.MessageEvent
@@ -182,6 +214,9 @@ func TestAlreadyPostedMessageShouldntBePostedTwice(t *testing.T) {
 }
 
 func TestNewMessageShouldBeReposted(t *testing.T) {
+	userMap = make(map[string]string)
+	userMap["U11KZA007"] = "aid"
+
 	// Initialization of test DB
 	db, err := bolt.Open("test.db", 0600, nil)
 	if err != nil {
@@ -202,7 +237,7 @@ func TestNewMessageShouldBeReposted(t *testing.T) {
 	ev := &slack.MessageEvent{
 		Msg: slack.Msg{
 			Channel: "111",
-			Text:    "test http://hh.ru " + randomString(50),
+			Text:    "test @U11KZA007 http://hh.ru " + randomString(50),
 		},
 	}
 	client := &SlackClient{
