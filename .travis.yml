@@ -3,7 +3,7 @@ go:
  - tip
 
 script:
- - go test $(go list ./... | grep -v /vendor/)
+ - go test -race $(go list ./... | grep -v /vendor/)
  
 after_success:
  - curl --request POST "https://goreportcard.com/checks" --data "repo=github.com/artemnikitin/qa-slack-bot"
