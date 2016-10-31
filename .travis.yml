@@ -1,6 +1,6 @@
 language: go
 go: 
- - tip
+ - 1.7.3
 
 script:
  - go test -race $(go list ./... | grep -v /vendor/)
