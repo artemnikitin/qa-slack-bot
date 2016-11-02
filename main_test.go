@@ -73,6 +73,8 @@ func TestIsJobPosting(t *testing.T) {
 		{"[skype - tamara.mishcherina ]\nВсем привет! Открылась вакансия для QA automation (опыт от 3+) на удаленку. English level (speaking, writing, reading) - intermediate level. Автоматизация на С#. Пишите в личку, отвечу на все вопросы. :slightly_smiling_face:", false},
 		{"http://hh.ru/something", true},
 		{"something interesting http://example.com/jobs", true},
+		{"something interesting http://example.com/jobs .slack.com", false},
+		{"something interesting http://example.com/jobs www.linkedin.com/comm/profile/fvfvf", false},
 	}
 
 	r, _ := regexp.Compile(REGEX)

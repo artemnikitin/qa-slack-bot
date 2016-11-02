@@ -22,6 +22,7 @@ var (
 
 	textKeywords         = []string{"ваканси", "работа", "позици", "тестировщик", "автоматизатор", "должность", "требования"}
 	linkKeywords         = []string{"hh.ru", "job", "linkedin", "position", "vacancy", "work", "career"}
+	exclusions           = []string{".slack.com", "linkedin.com/comm/profile"}
 	fromID, toID, userID string
 	userMap              map[string]string
 )
@@ -171,7 +172,7 @@ func main() {
 func isJobPosting(text string, r *regexp.Regexp) bool {
 	text = strings.ToLower(text)
 	withKeyword := containsKeyword(text, textKeywords) || containsKeyword(text, linkKeywords)
-	return r.MatchString(text) && withKeyword && isNotSlackURL(text)
+	return r.MatchString(text) && withKeyword && validateExclusions(text)
 }
 
 func containsKeyword(text string, list []string) bool {
@@ -185,8 +186,13 @@ func containsKeyword(text string, list []string) bool {
 	return result
 }
 
-func isNotSlackURL(text string) bool {
-	return !strings.Contains(text, ".slack.com")
+func validateExclusions(text string) bool {
+	for _, v := range exclusions {
+		if strings.Contains(text, v) {
+			return false
+		}
+	}
+	return true
 }
 
 func replaceIDWithNickname(text string) string {
