@@ -21,7 +21,7 @@ var (
 	debug       = flag.Bool("debug", false, "Enable debug mode")
 
 	textKeywords         = []string{"ваканси", "работа", "позици", "тестировщик", "автоматизатор", "должность", "требования"}
-	linkKeywords         = []string{"hh.ru", "job", "linkedin", "position", "vacancy", "work", "career"}
+	linkKeywords         = []string{"hh.ru", "job", "linkedin.com/jobs", "position", "vacancy", "work", "career"}
 	exclusions           = []string{".slack.com", "linkedin.com/comm/profile"}
 	fromID, toID, userID string
 	userMap              map[string]string
