@@ -120,7 +120,7 @@ func main() {
 	}
 	defer db.Close()
 	err = db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(BUCKET))
+		_, err = tx.CreateBucketIfNotExists([]byte(BUCKET))
 		return err
 	})
 	if err != nil {
