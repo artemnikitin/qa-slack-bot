@@ -29,7 +29,8 @@ var (
 
 const (
 	BUCKET           = "QA-SLACK"
-	REGEX            = "(http|https)://([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:/~+#-]*[\\w@?^=%&/~+#-])?"
+	REGEX_URL        = "(http|https)://([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:/~+#-]*[\\w@?^=%&/~+#-])?"
+	REGEX_EMAIL      = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}"
 	WRONG_CHANNEL_ID = "Wrong channel ID"
 	WRONG_USER_ID    = "Wrong user ID"
 	NOT_JOB_POSTING  = "Not job posting"
@@ -126,7 +127,7 @@ func main() {
 		log.Fatal("Can't create bucket: ", err)
 	}
 
-	r, err := regexp.Compile(REGEX)
+	r, err := regexp.Compile(REGEX_URL)
 	if err != nil {
 		log.Fatal("Can't compile regexp: ", err)
 	}
@@ -254,10 +255,7 @@ func alreadyPosted(text string, db *bolt.DB) bool {
 		}
 		return nil
 	})
-	if err != nil {
-		return true
-	}
-	return false
+	return err != nil
 }
 
 func savePosted(text string, db *bolt.DB) {

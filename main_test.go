@@ -37,7 +37,7 @@ func TestRegexp(t *testing.T) {
 		{"dsssdsdsd http://example.com  dfdf f- dfd ", true},
 	}
 
-	r, _ := regexp.Compile(REGEX)
+	r, _ := regexp.Compile(REGEX_URL)
 
 	for _, v := range cases {
 		result := r.MatchString(v.in)
@@ -77,7 +77,7 @@ func TestIsJobPosting(t *testing.T) {
 		{"something interesting http://example.com/jobs www.linkedin.com/comm/profile/fvfvf", false},
 	}
 
-	r, _ := regexp.Compile(REGEX)
+	r, _ := regexp.Compile(REGEX_URL)
 
 	for _, v := range cases {
 		result := isJobPosting(v.in, r)
@@ -154,7 +154,7 @@ func TestSlackClientRepost(t *testing.T) {
 	}
 
 	fromID = "111"
-	r, _ := regexp.Compile(REGEX)
+	r, _ := regexp.Compile(REGEX_URL)
 	client := &SlackClient{
 		Client: TestClient{},
 	}
@@ -197,7 +197,7 @@ func TestAlreadyPostedMessageShouldntBePostedTwice(t *testing.T) {
 
 	// Prepare test data
 	fromID = "111"
-	r, _ := regexp.Compile(REGEX)
+	r, _ := regexp.Compile(REGEX_URL)
 	ev := &slack.MessageEvent{
 		Msg: slack.Msg{
 			Channel: "111",
@@ -235,7 +235,7 @@ func TestNewMessageShouldBeReposted(t *testing.T) {
 
 	// Prepare test data
 	fromID = "111"
-	r, _ := regexp.Compile(REGEX)
+	r, _ := regexp.Compile(REGEX_URL)
 	ev := &slack.MessageEvent{
 		Msg: slack.Msg{
 			Channel: "111",
