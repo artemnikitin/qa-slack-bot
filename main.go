@@ -28,25 +28,25 @@ var (
 )
 
 const (
-	BUCKET           = "QA-SLACK"
-	REGEX_URL        = "(http|https)://([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:/~+#-]*[\\w@?^=%&/~+#-])?"
-	REGEX_EMAIL      = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}"
-	WRONG_CHANNEL_ID = "Wrong channel ID"
-	WRONG_USER_ID    = "Wrong user ID"
-	NOT_JOB_POSTING  = "Not job posting"
-	ALREADY_POSTED   = "Already posted"
+	bucket   = "QA-SLACK"
+	regexURL = "(http|https)://([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:/~+#-]*[\\w@?^=%&/~+#-])?"
+	//regexEmail             = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}"
+	wrongChannelID         = "Wrong channel ID"
+	wrongUserID            = "Wrong user ID"
+	messageIsNotJobPosting = "Not job posting"
+	messageIsAlreadyPosted = "Already posted"
 )
 
-type Slacker interface {
+type slacker interface {
 	Repost(string, string) error
 	Delete(string, string) error
 }
 
-type SlackerClient struct {
+type slackerClient struct {
 	Slack *slack.Client
 }
 
-func (c SlackerClient) Repost(toID, text string) error {
+func (c slackerClient) Repost(toID, text string) error {
 	params := slack.PostMessageParameters{
 		AsUser: true,
 	}
@@ -54,29 +54,29 @@ func (c SlackerClient) Repost(toID, text string) error {
 	return err
 }
 
-func (c SlackerClient) Delete(toID, timestamp string) error {
+func (c slackerClient) Delete(toID, timestamp string) error {
 	_, _, err := c.Slack.DeleteMessage(toID, timestamp)
 	return err
 }
 
-type SlackClient struct {
-	Client  Slacker
+type slackClient struct {
+	Client  slacker
 	Storage *bolt.DB
 }
 
-func (c *SlackClient) RepostMessage(ev *slack.MessageEvent, r *regexp.Regexp) error {
+func (c *slackClient) RepostMessage(ev *slack.MessageEvent, r *regexp.Regexp) error {
 	if ev.Channel != fromID {
-		return errors.New(WRONG_CHANNEL_ID)
+		return errors.New(wrongChannelID)
 	}
 	if len(ev.Attachments) > 0 {
-		return errors.New(NOT_JOB_POSTING)
+		return errors.New(messageIsNotJobPosting)
 	}
 	text := ev.Text
 	if ev.SubMessage != nil && ev.SubMessage.Text != "" {
 		text = ev.SubMessage.Text
 	}
 	if !isJobPosting(text, r) {
-		return errors.New(NOT_JOB_POSTING)
+		return errors.New(messageIsNotJobPosting)
 	}
 	text = strings.Replace(text, "<", "", -1)
 	text = strings.Replace(text, ">", "", -1)
@@ -84,19 +84,19 @@ func (c *SlackClient) RepostMessage(ev *slack.MessageEvent, r *regexp.Regexp) er
 		text = replaceIDWithNickname(text)
 	}
 	if alreadyPosted(text, c.Storage) {
-		return errors.New(ALREADY_POSTED)
+		return errors.New(messageIsAlreadyPosted)
 	}
 	savePosted(text, c.Storage)
 	err := c.Client.Repost(toID, text)
 	return err
 }
 
-func (c *SlackClient) DeleteMessage(ev *slack.MessageEvent) error {
+func (c *slackClient) DeleteMessage(ev *slack.MessageEvent) error {
 	if ev.Channel != toID {
-		return errors.New(WRONG_CHANNEL_ID)
+		return errors.New(wrongChannelID)
 	}
 	if ev.User == userID {
-		return errors.New(WRONG_USER_ID)
+		return errors.New(wrongUserID)
 	}
 	err := c.Client.Delete(toID, ev.Timestamp)
 	return err
@@ -120,22 +120,22 @@ func main() {
 	}
 	defer db.Close()
 	err = db.Update(func(tx *bolt.Tx) error {
-		_, err = tx.CreateBucketIfNotExists([]byte(BUCKET))
+		_, err = tx.CreateBucketIfNotExists([]byte(bucket))
 		return err
 	})
 	if err != nil {
 		log.Fatal("Can't create bucket: ", err)
 	}
 
-	r, err := regexp.Compile(REGEX_URL)
+	r, err := regexp.Compile(regexURL)
 	if err != nil {
 		log.Fatal("Can't compile regexp: ", err)
 	}
 
 	api := slack.New(*token)
 	api.SetDebug(*debug)
-	client := &SlackClient{
-		Client: SlackerClient{
+	client := &slackClient{
+		Client: slackerClient{
 			Slack: api,
 		},
 		Storage: db,
@@ -148,23 +148,19 @@ func main() {
 	go rtm.ManageConnection()
 
 	for {
-		select {
-		case msg := <-rtm.IncomingEvents:
-			fmt.Println("Event Received")
-			switch ev := msg.Data.(type) {
-			case *slack.MessageEvent:
-				client.RepostMessage(ev, r)
-				client.DeleteMessage(ev)
+		msg := <-rtm.IncomingEvents
+		fmt.Println("Event Received")
+		switch ev := msg.Data.(type) {
+		case *slack.MessageEvent:
+			client.RepostMessage(ev, r)
+			client.DeleteMessage(ev)
 
-			case *slack.RTMError:
-				fmt.Printf("Error: %s\n", ev.Error())
+		case *slack.RTMError:
+			fmt.Printf("Error: %s\n", ev.Error())
 
-			case *slack.InvalidAuthEvent:
-				fmt.Println("Error: Invalid credentials!")
-				break
-
-			default:
-			}
+		case *slack.InvalidAuthEvent:
+			fmt.Println("Error: Invalid credentials!")
+			break
 		}
 	}
 
@@ -248,7 +244,7 @@ func getSlackChannelID(api *slack.Client) {
 
 func alreadyPosted(text string, db *bolt.DB) bool {
 	err := db.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(BUCKET))
+		bucket := tx.Bucket([]byte(bucket))
 		bytes := bucket.Get([]byte(text))
 		if bytes != nil {
 			return errors.New("")
@@ -259,9 +255,12 @@ func alreadyPosted(text string, db *bolt.DB) bool {
 }
 
 func savePosted(text string, db *bolt.DB) {
-	db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(BUCKET))
+	err := db.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(bucket))
 		err := bucket.Put([]byte(text), []byte(text))
 		return err
 	})
+	if err != nil {
+		log.Println(err)
+	}
 }

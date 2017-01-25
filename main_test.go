@@ -12,15 +12,14 @@ import (
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-// TestClient test implementation of Slacker interface
-type TestClient struct {
+type testClient struct {
 }
 
-func (c TestClient) Repost(toID, text string) error {
+func (c testClient) Repost(toID, text string) error {
 	return nil
 }
 
-func (c TestClient) Delete(toID, timestamp string) error {
+func (c testClient) Delete(toID, timestamp string) error {
 	return nil
 }
 
@@ -37,7 +36,7 @@ func TestRegexp(t *testing.T) {
 		{"dsssdsdsd http://example.com  dfdf f- dfd ", true},
 	}
 
-	r, _ := regexp.Compile(REGEX_URL)
+	r, _ := regexp.Compile(regexURL)
 
 	for _, v := range cases {
 		result := r.MatchString(v.in)
@@ -77,7 +76,7 @@ func TestIsJobPosting(t *testing.T) {
 		{"something interesting http://example.com/jobs www.linkedin.com/comm/profile/fvfvf", false},
 	}
 
-	r, _ := regexp.Compile(REGEX_URL)
+	r, _ := regexp.Compile(regexURL)
 
 	for _, v := range cases {
 		result := isJobPosting(v.in, r)
@@ -128,13 +127,13 @@ func TestSlackClientRepost(t *testing.T) {
 			Msg: slack.Msg{
 				Channel: "222",
 			},
-		}, WRONG_CHANNEL_ID, "Wrong ID"},
+		}, wrongChannelID, "Wrong ID"},
 		{&slack.MessageEvent{
 			Msg: slack.Msg{
 				Channel: "111",
 				Text:    "wqeqewqewq",
 			},
-		}, NOT_JOB_POSTING, "Incorrect text"},
+		}, messageIsNotJobPosting, "Incorrect text"},
 		{&slack.MessageEvent{
 			Msg: slack.Msg{
 				Channel: "111",
@@ -143,20 +142,20 @@ func TestSlackClientRepost(t *testing.T) {
 			SubMessage: &slack.Msg{
 				Text: "wqeqweqeew",
 			},
-		}, NOT_JOB_POSTING, "Initially correct text, but incorrect after transformation"},
+		}, messageIsNotJobPosting, "Initially correct text, but incorrect after transformation"},
 		{&slack.MessageEvent{
 			Msg: slack.Msg{
 				Channel:     "111",
 				Text:        "http://hh.ru",
 				Attachments: []slack.Attachment{{}},
 			},
-		}, NOT_JOB_POSTING, "Correct text with attachments"},
+		}, messageIsNotJobPosting, "Correct text with attachments"},
 	}
 
 	fromID = "111"
-	r, _ := regexp.Compile(REGEX_URL)
-	client := &SlackClient{
-		Client: TestClient{},
+	r, _ := regexp.Compile(regexURL)
+	client := &slackClient{
+		Client: testClient{},
 	}
 
 	for _, v := range cases {
@@ -178,7 +177,7 @@ func TestAlreadyPostedMessageShouldntBePostedTwice(t *testing.T) {
 	}
 	defer db.Close()
 	err = db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(BUCKET))
+		_, err = tx.CreateBucketIfNotExists([]byte(bucket))
 		return err
 	})
 	if err != nil {
@@ -187,8 +186,8 @@ func TestAlreadyPostedMessageShouldntBePostedTwice(t *testing.T) {
 
 	// Post double message
 	err = db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(BUCKET))
-		err := bucket.Put([]byte("test http://hh.ru"), []byte("test http://hh.ru"))
+		bucket := tx.Bucket([]byte(bucket))
+		err = bucket.Put([]byte("test http://hh.ru"), []byte("test http://hh.ru"))
 		return err
 	})
 	if err != nil {
@@ -197,15 +196,15 @@ func TestAlreadyPostedMessageShouldntBePostedTwice(t *testing.T) {
 
 	// Prepare test data
 	fromID = "111"
-	r, _ := regexp.Compile(REGEX_URL)
+	r, _ := regexp.Compile(regexURL)
 	ev := &slack.MessageEvent{
 		Msg: slack.Msg{
 			Channel: "111",
 			Text:    "test http://hh.ru",
 		},
 	}
-	client := &SlackClient{
-		Client:  TestClient{},
+	client := &slackClient{
+		Client:  testClient{},
 		Storage: db,
 	}
 
@@ -226,7 +225,7 @@ func TestNewMessageShouldBeReposted(t *testing.T) {
 	}
 	defer db.Close()
 	err = db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte(BUCKET))
+		_, err = tx.CreateBucketIfNotExists([]byte(bucket))
 		return err
 	})
 	if err != nil {
@@ -235,15 +234,15 @@ func TestNewMessageShouldBeReposted(t *testing.T) {
 
 	// Prepare test data
 	fromID = "111"
-	r, _ := regexp.Compile(REGEX_URL)
+	r, _ := regexp.Compile(regexURL)
 	ev := &slack.MessageEvent{
 		Msg: slack.Msg{
 			Channel: "111",
 			Text:    "test @U11KZA007 http://hh.ru " + randomString(50),
 		},
 	}
-	client := &SlackClient{
-		Client:  TestClient{},
+	client := &slackClient{
+		Client:  testClient{},
 		Storage: db,
 	}
 
