@@ -4,19 +4,19 @@
 		{
 			"importpath": "github.com/boltdb/bolt",
 			"repository": "https://github.com/boltdb/bolt",
-			"revision": "e72f08ddb5a52992c0a44c7dda9316c7333938b2",
+			"revision": "a705895fdad108f053eae7ee011ed94a0541ee13",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/nlopes/slack",
 			"repository": "https://github.com/nlopes/slack",
-			"revision": "b7940f209838f93dc7ab0d823145513c9660f22a",
+			"revision": "77d2318fa88fcba8e9561e87f951ce32d747c751",
 			"branch": "master"
 		},
 		{
 			"importpath": "github.com/patrickmn/go-cache",
 			"repository": "https://github.com/patrickmn/go-cache",
-			"revision": "1881a9bccb818787f68c52bfba648c6cf34c34fa",
+			"revision": "e7a9def80f35fe1b170b7b8b68871d59dea117e1",
 			"branch": "master"
 		}
 	]
