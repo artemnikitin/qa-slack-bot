@@ -253,6 +253,61 @@ func TestNewMessageShouldBeReposted(t *testing.T) {
 
 }
 
+func TestDeleteMessage(t *testing.T) {
+	toID = "111"
+	userID = "vasya"
+	ev := &slack.MessageEvent{
+		Msg: slack.Msg{
+			Channel: "111",
+			User:    "kolya",
+			Text:    "flood",
+		},
+	}
+	client := &slackClient{
+		Client: testClient{},
+	}
+
+	err := client.DeleteMessage(ev)
+	if err != nil {
+		t.Error("Can't delete message: ", err)
+	}
+
+}
+
+func TestDeleteMessageIncorrectValues(t *testing.T) {
+	cases := []struct {
+		msg       *slack.MessageEvent
+		res, desc string
+	}{
+		{&slack.MessageEvent{
+			Msg: slack.Msg{
+				User: "vasya",
+				Text: "some flood",
+			},
+		}, wrongChannelID, "Wrong channel ID"},
+		{&slack.MessageEvent{
+			Msg: slack.Msg{
+				Channel: "111",
+				User:    "vasya",
+				Text:    "some flood",
+			},
+		}, wrongUserID, "Wrong user ID"},
+	}
+
+	toID = "111"
+	userID = "vasya"
+	client := &slackClient{
+		Client: testClient{},
+	}
+
+	for _, v := range cases {
+		err := client.DeleteMessage(v.msg)
+		if err != nil && err.Error() != v.res {
+			t.Errorf("For case: %s, actual error:%s, expected: %s", v.desc, err.Error(), v.res)
+		}
+	}
+}
+
 func randomString(n int) string {
 	rand.Seed(time.Now().UnixNano())
 	b := make([]rune, n)
