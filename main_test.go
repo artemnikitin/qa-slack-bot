@@ -28,7 +28,6 @@ func TestRegexp(t *testing.T) {
 		in  string
 		res bool
 	}{
-		{"[skype - tamara.mishcherina ]\nВсем привет! Открылась вакансия для QA automation (опыт от 3+) на удаленку. English level (speaking, writing, reading) - intermediate level. Автоматизация на С#. Пишите в личку, отвечу на все вопросы. :slightly_smiling_face:", false},
 		{"htttp://hh.ru/dfffgfgf", false},
 		{"http://hh.ru/dfffgfgf", true},
 		{"something http://example.com/jobs", true},
@@ -37,6 +36,28 @@ func TestRegexp(t *testing.T) {
 	}
 
 	r, _ := regexp.Compile(regexURL)
+
+	for _, v := range cases {
+		result := r.MatchString(v.in)
+		if result != v.res {
+			t.Errorf("For string: %s, actual result: %v, expected: %v", v.in, result, v.res)
+		}
+	}
+}
+
+func TestRegexpEmail(t *testing.T) {
+	cases := []struct {
+		in  string
+		res bool
+	}{
+		{"dfdfdfdfd", false},
+		{"vasya@googl.ecom", true},
+		{"vasya@googl.ecom something interesting", true},
+		{"something vasya@goog.ckk", true},
+		{"something vasya@goog.ckk something more", true},
+	}
+
+	r, _ := regexp.Compile(regexEmail)
 
 	for _, v := range cases {
 		result := r.MatchString(v.in)
@@ -69,17 +90,22 @@ func TestIsJobPosting(t *testing.T) {
 		in  string
 		res bool
 	}{
-		{"[skype - tamara.mishcherina ]\nВсем привет! Открылась вакансия для QA automation (опыт от 3+) на удаленку. English level (speaking, writing, reading) - intermediate level. Автоматизация на С#. Пишите в личку, отвечу на все вопросы. :slightly_smiling_face:", false},
+		{"[skype - tamara.mishcherina ]\nВсем привет! Открылась вакансия для QA automation (опыт от 3+) на удаленку. English level (speaking, writing, reading) - intermediate level. Автоматизация на С#. Пишите в личку, отвечу на все вопросы. :slightly_smiling_face:", true},
+		{"Нужен опытный секьюрити тестировщик для проверки веб приложения на Owasp Top 10 уязвимости. Если кому интересно, стучите в личку или присылайте свои CV на kmachuhin@gmail.com", true},
 		{"http://hh.ru/something", true},
 		{"something interesting http://example.com/jobs", true},
-		{"something interesting http://example.com/jobs .slack.com", false},
+		{"nice comment http://something.slack.com", false},
 		{"something interesting http://example.com/jobs www.linkedin.com/comm/profile/fvfvf", false},
 	}
 
+	var regexList []*regexp.Regexp
 	r, _ := regexp.Compile(regexURL)
+	regexList = append(regexList, r)
+	r, _ = regexp.Compile(regexEmail)
+	regexList = append(regexList, r)
 
 	for _, v := range cases {
-		result := isJobPosting(v.in, r)
+		result := isJobPosting(v.in, regexList)
 		if result != v.res {
 			t.Errorf("For string: %s, actual result: %v, expected: %v", v.in, result, v.res)
 		}
@@ -153,13 +179,18 @@ func TestSlackClientRepost(t *testing.T) {
 	}
 
 	fromID = "111"
+	var regexList []*regexp.Regexp
 	r, _ := regexp.Compile(regexURL)
+	regexList = append(regexList, r)
+	r, _ = regexp.Compile(regexEmail)
+	regexList = append(regexList, r)
+
 	client := &slackClient{
 		Client: testClient{},
 	}
 
 	for _, v := range cases {
-		err := client.RepostMessage(v.msg, r)
+		err := client.RepostMessage(v.msg, regexList)
 		if err == nil {
 			t.Errorf("For case: %s, error shouldn't be nil!", v.desc)
 		}
@@ -196,7 +227,12 @@ func TestAlreadyPostedMessageShouldntBePostedTwice(t *testing.T) {
 
 	// Prepare test data
 	fromID = "111"
+	var regexList []*regexp.Regexp
 	r, _ := regexp.Compile(regexURL)
+	regexList = append(regexList, r)
+	r, _ = regexp.Compile(regexEmail)
+	regexList = append(regexList, r)
+
 	ev := &slack.MessageEvent{
 		Msg: slack.Msg{
 			Channel: "111",
@@ -208,7 +244,7 @@ func TestAlreadyPostedMessageShouldntBePostedTwice(t *testing.T) {
 		Storage: db,
 	}
 
-	err = client.RepostMessage(ev, r)
+	err = client.RepostMessage(ev, regexList)
 	if err == nil {
 		t.Error(err.Error())
 	}
@@ -234,7 +270,12 @@ func TestNewMessageShouldBeReposted(t *testing.T) {
 
 	// Prepare test data
 	fromID = "111"
+	var regexList []*regexp.Regexp
 	r, _ := regexp.Compile(regexURL)
+	regexList = append(regexList, r)
+	r, _ = regexp.Compile(regexEmail)
+	regexList = append(regexList, r)
+
 	ev := &slack.MessageEvent{
 		Msg: slack.Msg{
 			Channel: "111",
@@ -246,7 +287,7 @@ func TestNewMessageShouldBeReposted(t *testing.T) {
 		Storage: db,
 	}
 
-	err = client.RepostMessage(ev, r)
+	err = client.RepostMessage(ev, regexList)
 	if err != nil {
 		t.Error(err.Error())
 	}

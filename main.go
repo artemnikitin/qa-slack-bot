@@ -28,9 +28,9 @@ var (
 )
 
 const (
-	bucket   = "QA-SLACK"
-	regexURL = "(http|https)://([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:/~+#-]*[\\w@?^=%&/~+#-])?"
-	//regexEmail             = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}"
+	bucket                 = "QA-SLACK"
+	regexURL               = "(http|https)://([\\w_-]+(?:(?:\\.[\\w_-]+)+))([\\w.,@?^=%&:/~+#-]*[\\w@?^=%&/~+#-])?"
+	regexEmail             = "([a-zA-Z0-9][-_.a-zA-Z0-9]*)(@[-_.a-zA-Z0-9]+)"
 	wrongChannelID         = "Wrong channel ID"
 	wrongUserID            = "Wrong user ID"
 	messageIsNotJobPosting = "Not job posting"
@@ -64,7 +64,7 @@ type slackClient struct {
 	Storage *bolt.DB
 }
 
-func (c *slackClient) RepostMessage(ev *slack.MessageEvent, r *regexp.Regexp) error {
+func (c *slackClient) RepostMessage(ev *slack.MessageEvent, r []*regexp.Regexp) error {
 	if ev.Channel != fromID {
 		return errors.New(wrongChannelID)
 	}
@@ -127,10 +127,18 @@ func main() {
 		log.Fatal("Can't create bucket: ", err)
 	}
 
+	var regexList []*regexp.Regexp
 	r, err := regexp.Compile(regexURL)
 	if err != nil {
 		log.Fatal("Can't compile regexp: ", err)
 	}
+	regexList = append(regexList, r)
+
+	r, err = regexp.Compile(regexEmail)
+	if err != nil {
+		log.Fatal("Can't compile regexp: ", err)
+	}
+	regexList = append(regexList, r)
 
 	api := slack.New(*token)
 	api.SetDebug(*debug)
@@ -152,7 +160,7 @@ func main() {
 		fmt.Println("Event Received")
 		switch ev := msg.Data.(type) {
 		case *slack.MessageEvent:
-			client.RepostMessage(ev, r)
+			client.RepostMessage(ev, regexList)
 			client.DeleteMessage(ev)
 
 		case *slack.RTMError:
@@ -166,10 +174,19 @@ func main() {
 
 }
 
-func isJobPosting(text string, r *regexp.Regexp) bool {
+func isJobPosting(text string, r []*regexp.Regexp) bool {
 	text = strings.ToLower(text)
 	withKeyword := containsKeyword(text, textKeywords) || containsKeyword(text, linkKeywords)
-	return r.MatchString(text) && withKeyword && validateExclusions(text)
+
+	var regexValidated bool
+	for _, rgxp := range r {
+		if rgxp.MatchString(text) {
+			regexValidated = true
+			break
+		}
+	}
+
+	return (withKeyword || regexValidated) && validateExclusions(text)
 }
 
 func containsKeyword(text string, list []string) bool {
