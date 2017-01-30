@@ -22,7 +22,7 @@ var (
 
 	textKeywords         = []string{"ваканси", "работа", "позици", "тестировщик", "автоматизатор", "должность", "требования"}
 	linkKeywords         = []string{"hh.ru", "job", "linkedin.com/jobs", "position", "vacancy", "work", "career"}
-	exclusions           = []string{".slack.com", "linkedin.com/comm/profile"}
+	exclusions           = []string{".slack.com", "linkedin.com/comm/profile", "linkedin.com/profile"}
 	fromID, toID, userID string
 	userMap              map[string]string
 )
@@ -177,6 +177,7 @@ func main() {
 func isJobPosting(text string, r []*regexp.Regexp) bool {
 	text = strings.ToLower(text)
 	withKeyword := containsKeyword(text, textKeywords) || containsKeyword(text, linkKeywords)
+	skypeRule := strings.HasPrefix(text, "[skype -")
 
 	var regexValidated bool
 	for _, rgxp := range r {
@@ -186,7 +187,16 @@ func isJobPosting(text string, r []*regexp.Regexp) bool {
 		}
 	}
 
-	return (withKeyword || regexValidated) && validateExclusions(text)
+	var validatedText bool
+	if skypeRule {
+		validatedText = true
+	} else {
+		if regexValidated {
+			validatedText = withKeyword
+		}
+	}
+
+	return validatedText && validateExclusions(text)
 }
 
 func containsKeyword(text string, list []string) bool {

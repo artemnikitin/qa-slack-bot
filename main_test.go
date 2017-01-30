@@ -90,12 +90,14 @@ func TestIsJobPosting(t *testing.T) {
 		in  string
 		res bool
 	}{
-		{"[skype - tamara.mishcherina ]\nВсем привет! Открылась вакансия для QA automation (опыт от 3+) на удаленку. English level (speaking, writing, reading) - intermediate level. Автоматизация на С#. Пишите в личку, отвечу на все вопросы. :slightly_smiling_face:", true},
 		{"Нужен опытный секьюрити тестировщик для проверки веб приложения на Owasp Top 10 уязвимости. Если кому интересно, стучите в личку или присылайте свои CV на kmachuhin@gmail.com", true},
 		{"http://hh.ru/something", true},
 		{"something interesting http://example.com/jobs", true},
+		{"[skype - tamara.mishcherina ]\nВсем привет! Открылась вакансия для QA automation (опыт от 3+) на удаленку. English level (speaking, writing, reading) - intermediate level. Автоматизация на С#. Пишите в личку, отвечу на все вопросы. :slightly_smiling_face:", true},
+		{"Всем привет! Открылась вакансия для QA automation (опыт от 3+) на удаленку. English level (speaking, writing, reading) - intermediate level. Автоматизация на С#. Пишите в личку, отвечу на все вопросы. :slightly_smiling_face:", false},
 		{"nice comment http://something.slack.com", false},
 		{"something interesting http://example.com/jobs www.linkedin.com/comm/profile/fvfvf", false},
+		{"job job job linkedin.com/profile/fvfvf", false},
 	}
 
 	var regexList []*regexp.Regexp
