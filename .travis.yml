@@ -1,6 +1,11 @@
 language: go
-go: 
- - 1.7.3
+
+go:
+ - 1.7.5
+
+install:
+# Run random command to prevent run go get
+- pwd
 
 script:
  - go test -race $(go list ./... | grep -v /vendor/)
