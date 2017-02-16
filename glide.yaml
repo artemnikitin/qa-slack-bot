@@ -1,0 +1,6 @@
+package: github.com/artemnikitin/qa-slack-bot
+import:
+- package: github.com/boltdb/bolt
+  version: ~1.3.0
+- package: github.com/nlopes/slack
+  version: ~0.0.1
