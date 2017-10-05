@@ -1,14 +1,15 @@
 language: go
 
 go:
- - 1.7.5
+ - 1.9.x
+ - 1.8.x
 
 install:
-# Run random command to prevent run go get
-- pwd
+ - pwd # Run random command to prevent run go get
 
 script:
- - go test -race $(go list ./... | grep -v /vendor/)
+ - go test -race $(go list ./... | grep -v /vendor/) -coverprofile=coverage.out
+ - go tool cover -func=coverage.out
  
 after_success:
  - curl --request POST "https://goreportcard.com/checks" --data "repo=github.com/artemnikitin/qa-slack-bot"
