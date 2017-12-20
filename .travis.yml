@@ -8,8 +8,7 @@ install:
  - pwd # Run random command to prevent run go get
 
 script:
- - go test -race $(go list ./... | grep -v /vendor/) -coverprofile=coverage.out
- - go tool cover -func=coverage.out
+ - go test -race -v $(go list ./... | grep -v /vendor/) -coverprofile=coverage.out
  
 after_success:
  - curl --request POST "https://goreportcard.com/checks" --data "repo=github.com/artemnikitin/qa-slack-bot"
